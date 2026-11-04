@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: bijouterie
+  labels:
+    app: bijouterie
+    tier: database
+spec:
+  replicas: 1
+  
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:           
+      app: bijouterie
+      tier: database
+  template:
+    metadata:
+      labels:      
+        app: bijouterie
+        tier: database
+    spec:
+      containers:
+        - name: mysql
+          image: kane2404/bijouterie-mysql:0    
+          ports:
+            - name: mysql
+              containerPort: 3306
+          
+          envFrom:
+            - secretRef:
+                name: mysql-secret
+          
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent
+            periodSeconds: 10
+            timeoutSeconds: 5
+          
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -uroot --silent
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:     
+              cpu: 100m
+              memory: 256Mi
+            limits:         
+              cpu: 500m
+              memory: 1Gi
