@@ -28,7 +28,7 @@ spec:
         runAsUser: 1000      
       containers:
         - name: backend
-          image: kane2404/bijouterie-backend:0  )
+          image: kane2404/bijouterie-backend:0  
           ports:
             - name: http
               containerPort: 3000
