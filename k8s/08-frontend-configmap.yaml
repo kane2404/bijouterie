@@ -1,11 +1,12 @@
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: frontend-config  
+  name: frontend-config         
   namespace: bijouterie
   labels:
     app: bijouterie
     tier: frontend
 data:
-  BACKEND_URL: "http://backend:3000" 
-  MAX_UPLOAD_SIZE: "6m"        
+  BACKEND_URL: "http://backend:3000"   # nom du Service backend + son port apres c nginx y relaie les requetess /api/...
+  MAX_UPLOAD_SIZE: "6m"                # taille max d'une requete (la photo)

@@ -7,36 +7,40 @@ metadata:
     app: bijouterie
     tier: backend
 spec:
-  replicas: 2
+  replicas: 2                   # 2 pods donc si l'un tombe, l'autre répond
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0     
-      maxSurge: 1          
+      maxUnavailable: 0         # pendant une mise à jour, on garde toujours les 2 pods disponibles
+      maxSurge: 1               # on peut en créer 1 de plus le temps de la transition
   selector:
-    matchLabels:           
+    matchLabels:               
       app: bijouterie
       tier: backend
   template:
     metadata:
-      labels:               
+      labels:                   # le service "backend" sélectionne les pods avec ces labels
         app: bijouterie
         tier: backend
     spec:
       securityContext:
-        runAsNonRoot: true   
-        runAsUser: 1000      
+        runAsNonRoot: true      # on refuse de tourner en root
+        runAsUser: 1000        
+                                
       containers:
         - name: backend
-          image: kane2404/bijouterie-backend:0  
+          # Tag explicite (jamais latest) : 0 pour l'instant
+          image: kane2404/bijouterie-backend:0
           ports:
             - name: http
               containerPort: 3000
-          
+
+          # Méthode 1 - envFrom : toutes les clés de la ConfigMap deviennent des variables d'environnement (PORT, DB_HOST, DB_NAME, SHOP_NAME...)
           envFrom:
             - configMapRef:
                 name: backend-config
-          
+
+          # Méthode 2 - valueFrom : on choisit une clé précise du Secret. C'est plus explicite t ça permet de ne prendre que ce dont on a besoin (ou de renommer la variable).
           env:
             - name: DB_USER
               valueFrom:
@@ -48,21 +52,27 @@ spec:
                 secretKeyRef:
                   name: backend-secret
                   key: DB_PASSWORD
-          
+
+          # startupProbe : le backend réessaie de joindre MySQL au démarrage.
+          # On lui laisse 2 min avant de le considérer en échec.
           startupProbe:
             httpGet:
               path: /api/health
               port: http
             periodSeconds: 3
             failureThreshold: 40
-          
+
+          # readinessProbe : /api/ready répond 503 si MySQL est injoignable.
+          # Le pod est alors retiré du Service, sans être redémarré.
           readinessProbe:
             httpGet:
               path: /api/ready
               port: http
             periodSeconds: 10
-            timeoutSeconds: 10    
-          
+            timeoutSeconds: 10      # large, car le nœud est parfois très chargé
+
+          # livenessProbe : /api/health dit seulement "le processus répond".
+          # S'il ne répond plus (6 échecs de suite), le conteneur est redémarré.
           livenessProbe:
             httpGet:
               path: /api/health
@@ -70,14 +80,15 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 10
             failureThreshold: 6
+
           resources:
-            requests:              
+            requests:           # réservé au pod 
               cpu: 50m
               memory: 96Mi
-            limits:                
+            limits:             # plafond : au-delà de la mémoire, le conteneur est tué (OOMKilled)
               cpu: 300m
               memory: 256Mi
           securityContext:
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: false   # le processus ne peut pas obtenir plus de droits
             capabilities:
-              drop: ["ALL"]
+              drop: ["ALL"]                   # on retire toutes les capacités Linux inutiles

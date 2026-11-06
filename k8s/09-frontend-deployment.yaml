@@ -7,41 +7,45 @@ metadata:
     app: bijouterie
     tier: frontend
 spec:
-  replicas: 2
+  replicas: 2                   # 2 pods : le site reste disponible si l'un redémarre
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0
+      maxUnavailable: 0         # jamais moins de 2 pods disponibles pendant une mise à jour
       maxSurge: 1
   selector:
-    matchLabels:
+    matchLabels:                # identique aux labels du pod
       app: bijouterie
       tier: frontend
   template:
     metadata:
-      labels:
+      labels:                   # le service "frontend" (NodePort) cible ces labels
         app: bijouterie
         tier: frontend
     spec:
-      
+      # Pas de securityContext ici : l'image nginx:1.27 démarre en root (port 80 et écriture de sa configuration au démarrage)
       containers:
         - name: frontend
-          image: kane2404/bijouterie-frontend:0   
+          # Tag explicite (jamais latest) : 0 pour l'instant, remplacé par le numero de build Jenkins.
+          image: kane2404/bijouterie-frontend:0
           ports:
             - name: http
               containerPort: 80
-          
+          # Toutes les clés de frontend-config (BACKEND_URL, MAX_UPLOAD_SIZE) deviennent des
+          # variables d'environnement, utilisées par nginx au démarrage.
           envFrom:
             - configMapRef:
                 name: frontend-config
-        
+
+          # readinessProbe : /healthz est servi directement par nginx et réponse "ok"
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
             periodSeconds: 10
             timeoutSeconds: 5
-         
+          # livenessProbe : redémarre nginx s'il ne répond plus (6 échecs de suite),
+          # assez patiente pour ne pas le tuer quand le nœud est juste ralenti.
           livenessProbe:
             httpGet:
               path: /healthz

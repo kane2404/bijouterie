@@ -1,17 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend
+  name: backend                 # c'est le nom qui apparaît dans BACKEND_URL
   namespace: bijouterie
   labels:
     app: bijouterie
     tier: backend
 spec:
-  type: ClusterIP
-  selector:
+  type: ClusterIP               # seul le frontend nginx a besoin de l'appeler
+  selector:                     # si ces labels ne correspondent pas a ceux des pods, le service n'a aucun endpoint
     app: bijouterie
     tier: backend
   ports:
     - name: http
-      port: 3000
-      targetPort: http
+      port: 3000                # port du service
+      targetPort: http          # port nommer "http" du conteneur (3000)

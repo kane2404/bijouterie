@@ -7,12 +7,12 @@ metadata:
     app: bijouterie
     tier: frontend
 spec:
-  type: NodePort
+  type: NodePort                # ouvre un port sur le nœud (plage 30000-32767) pour y accéder depuis le navigateur
   selector:
     app: bijouterie
     tier: frontend
   ports:
     - name: http
-      port: 80               
-      targetPort: http      
-      nodePort: 30080        
+      port: 80                  # port du Service, à l'intérieur du cluster
+      targetPort: http          # port nommé "http" du conteneur nginx (80)
+      nodePort: 30080           # port ouvert sur le nœud, imposé : http://localhost:30080
