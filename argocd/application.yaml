@@ -1,0 +1,21 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bijouterie
+  namespace: argocd            
+spec:
+  project: default            
+  source:
+    repoURL: https://github.com/kane2404/bijouterie.git   # le dépôt Git public
+    targetRevision: main       # la branche 
+    path: k8s                  # le dossier des manifestes
+  destination:
+    server: https://kubernetes.default.svc   # le cluster où Argo CD est installé
+    namespace: bijouterie      # namespace de déploiement de l'application
+  syncPolicy:
+    automated:                 # synchronisation automatique
+      prune: true              # supprime du cluster ce qui a disparu de Git
+      selfHeal: true           # corrige toute modification manuelle faite dans le cluster
+    syncOptions:
+      - CreateNamespace=true   # crée le namespace s'il n'existe pas
