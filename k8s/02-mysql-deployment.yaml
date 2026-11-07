@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: mysql
-          image: kane2404/bijouterie-mysql:0    
+          image: kane2404/bijouterie-mysql:2    
           ports:
             - name: mysql
               containerPort: 3306
